@@ -74,7 +74,7 @@ nav.scrolled{background:rgba(10,10,11,.95);backdrop-filter:blur(20px);border-bot
 .hero-visual{width:100%;max-width:420px;position:relative}
 .hero-card{background:transparent;border:none;aspect-ratio:1;display:flex;align-items:center;justify-content:center;position:relative}
 .hero-card::before{display:none}
-.hero-card-inner{width:80%;aspect-ratio:1;filter:drop-shadow(0 20px 40px rgba(0,0,0,.6));transition:transform .8s cubic-bezier(.16,1,.3,1)}
+.hero-card-inner{width:104%;aspect-ratio:1;filter:drop-shadow(0 20px 40px rgba(0,0,0,.6));transition:transform .8s cubic-bezier(.16,1,.3,1)}
 .hero-card-inner img{width:100%;height:100%;object-fit:contain;display:block}
 .hero-card:hover .hero-card-inner{transform:scale(1.05) rotate(-3deg)}
 .hero-badge{position:absolute;bottom:1rem;left:1rem;background:rgba(10,10,11,.82);border:1px solid var(--line);padding:.3rem .65rem;font-size:.52rem;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;backdrop-filter:blur(8px);max-width:calc(100% - 2rem);overflow:hidden}
@@ -948,8 +948,33 @@ const heroTl = gsap.timeline({ defaults: { ease: 'power2.out' } });
 // Tag de ubicación "Talca · Maule · Chile"
 heroTl.from('.hero-tag', { opacity: 0, y: 20, duration: 0.55 }, 0.15);
 
-// Título completo como bloque — fade in + sube desde 30px
-heroTl.from('.hero-title', { opacity: 0, y: 30, duration: 0.7 }, 0.35);
+// Util: divide una línea en spans de un carácter.
+// Seguro porque cada .line1/.line2/.line3 ya es display:block en CSS —
+// los chars inline-block nunca se parten entre líneas distintas.
+function splitChars(lineEl) {
+  const text = lineEl.textContent;
+  lineEl.innerHTML = '';
+  return [...text].map(ch => {
+    const s = document.createElement('span');
+    s.style.display = 'inline-block';
+    s.textContent = ch;
+    lineEl.appendChild(s);
+    return s;
+  });
+}
+
+// Título letra por letra: de izquierda a derecha, línea a línea
+document.querySelectorAll('.hero-title .line1, .hero-title .line2, .hero-title .line3')
+  .forEach((line, i) => {
+    const chars = splitChars(line);
+    heroTl.from(chars, {
+      opacity: 0,
+      y: 20,
+      duration: 0.5,
+      stagger: 0.04,
+      ease: 'power2.out',
+    }, i === 0 ? 0.35 : '-=0.3');
+  });
 
 // Subtítulo descriptivo
 heroTl.from('.hero-sub', { opacity: 0, y: 22, duration: 0.65 }, '-=0.18');
@@ -988,7 +1013,7 @@ document.querySelectorAll([
     y: 60,
     duration: 0.85,
     ease: 'power2.out',
-    scrollTrigger: { trigger: el, start: 'top 88%', once: true },
+    scrollTrigger: { trigger: el, start: 'top 88%', toggleActions: 'play reverse play reverse' },
   });
 });
 
@@ -1009,7 +1034,7 @@ document.querySelectorAll([
     duration: 0.65,
     stagger: 0.15,
     ease: 'power2.out',
-    scrollTrigger: { trigger, start: 'top 85%', once: true },
+    scrollTrigger: { trigger, start: 'top 85%', toggleActions: 'play reverse play reverse' },
   });
 });
 </script>
