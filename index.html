@@ -250,12 +250,9 @@ footer{background:var(--card);border-top:1px solid var(--line);padding:4rem}
 .pp-wa{display:block;width:100%;background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;padding:.9rem;text-align:center;text-decoration:none;font-family:'Syne',sans-serif;font-size:.78rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;transition:opacity .25s}
 .pp-wa:hover{opacity:.9}
 
-/* SCROLL REVEAL */
-.reveal{opacity:0;transform:translateY(28px);transition:opacity .7s cubic-bezier(.16,1,.3,1),transform .7s cubic-bezier(.16,1,.3,1)}
-.reveal.show{opacity:1;transform:translateY(0)}
-.reveal-d1{transition-delay:.1s}
-.reveal-d2{transition-delay:.2s}
-.reveal-d3{transition-delay:.3s}
+/* SCROLL REVEAL — neutralizado; GSAP ScrollTrigger maneja todas las animaciones */
+.reveal,.reveal.show{opacity:1;transform:none;transition:none}
+.reveal-d1,.reveal-d2,.reveal-d3{}
 
 /* ── TABLET / MOBILE ≤ 900px ────────────────────────────────────────────── */
 @media(max-width:900px){
@@ -663,6 +660,10 @@ footer{background:var(--card);border-top:1px solid var(--line);padding:4rem}
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
+<!-- GSAP 3 + ScrollTrigger desde CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+
 <script>
 // ─── DB ───────────────────────────────────────────────────────────────────────
 const DB={
@@ -796,11 +797,7 @@ FAQS.forEach(([q,a])=>{
   faqList.appendChild(item);
 });
 
-// ─── REVEAL ON SCROLL ─────────────────────────────────────────────────────────
-const revObs=new IntersectionObserver(entries=>{
-  entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('show')});
-},{threshold:.1});
-document.querySelectorAll('.reveal').forEach(r=>revObs.observe(r));
+// ─── REVEAL ON SCROLL — manejado por GSAP ScrollTrigger (ver abajo) ───────────
 
 // ─── NAV STATE ───────────────────────────────────────────────────────────────
 let prevScrollY=0;    // Y guardado antes de entrar a página interna
@@ -833,6 +830,12 @@ function openBrand(brand){
     grid.appendChild(card);
   });
   showPage('brand-page',0);
+  // Animar model-cards con GSAP al abrir la página de marca
+  requestAnimationFrame(()=>{
+    gsap.from('#models-grid .model-card',{
+      opacity:0,y:50,duration:0.5,stagger:0.12,ease:'power2.out'
+    });
+  });
 }
 function closeBrand(e){e.preventDefault();showPage('main-site',prevScrollY)}
 
@@ -935,6 +938,102 @@ function toast(msg){
   t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),3000);
 }
+
+// ─── GSAP ANIMACIONES ─────────────────────────────────────────────────────────
+gsap.registerPlugin(ScrollTrigger);
+
+// Util: divide el texto de un elemento en <span> de un carácter cada uno
+function splitChars(lineEl) {
+  const raw = lineEl.textContent;
+  lineEl.innerHTML = '';
+  return [...raw].map(ch => {
+    const s = document.createElement('span');
+    s.style.display = 'inline-block';
+    // Espacios como non-breaking para que no colapsen
+    s.textContent = ch === ' ' ? ' ' : ch;
+    lineEl.appendChild(s);
+    return s;
+  });
+}
+
+// ── 1. HERO TIMELINE — carga inicial ─────────────────────────────────────────
+const heroTl = gsap.timeline({ defaults: { ease: 'power2.out' } });
+
+// Tag de ubicación "Talca · Maule · Chile"
+heroTl.from('.hero-tag', { opacity: 0, y: 20, duration: 0.55 }, 0.15);
+
+// Título: cada línea entra letra por letra en secuencia
+document.querySelectorAll('.hero-title span').forEach((line, i) => {
+  const chars = splitChars(line);
+  heroTl.from(chars, {
+    opacity: 0,
+    y: 32,
+    duration: 0.45,
+    stagger: 0.04,
+  }, i === 0 ? 0.35 : '-=0.32');
+});
+
+// Subtítulo descriptivo
+heroTl.from('.hero-sub', { opacity: 0, y: 22, duration: 0.65 }, '-=0.18');
+
+// Botones de acción uno tras otro
+heroTl.from('.hero-actions > *', {
+  opacity: 0,
+  y: 18,
+  duration: 0.5,
+  stagger: 0.15,
+}, '-=0.45');
+
+// Panel visual con la zapatilla (desktop)
+heroTl.from('.hero-right', { opacity: 0, x: 48, duration: 0.9 }, 0.5);
+
+// Stats de la barra inferior
+heroTl.from('.hstat', {
+  opacity: 0,
+  y: 20,
+  duration: 0.45,
+  stagger: 0.1,
+}, '-=0.55');
+
+// ── 2. SCROLL REVEAL — cabeceras de sección ───────────────────────────────────
+document.querySelectorAll([
+  '.testi-section .s-label',   '.testi-section .s-title',
+  '.bs-header .s-label',       '.bs-header .s-title',    '.bs-header .btn-ghost',
+  '.catalog-header .s-label',  '.catalog-header .s-title','.catalog-header .s-sub',
+  '.process-section .s-label', '.process-section .s-title',
+  '.comp-header .s-label',     '.comp-header .s-title',
+  '.faq-section .s-label',     '.faq-section .s-title',
+  '.search-wrap',
+].join(',')).forEach(el => {
+  gsap.from(el, {
+    opacity: 0,
+    y: 60,
+    duration: 0.85,
+    ease: 'power2.out',
+    scrollTrigger: { trigger: el, start: 'top 88%', once: true },
+  });
+});
+
+// ── 3. TARJETAS EN STAGGER — 0.15 s de diferencia entre cada una ─────────────
+[
+  { sel: '.testi-card',                 trigger: '.testi-grid'   },
+  { sel: '.process-step',               trigger: '.process-grid' },
+  { sel: '.comp-row:not(:first-child)', trigger: '.comp-table'   },
+  { sel: '.faq-item',                   trigger: '.faq-wrap'     },
+  { sel: '.bs-card',                    trigger: '#bs-track'     },
+  { sel: '.cat-item',                   trigger: '#cat-grid'     },
+].forEach(({ sel, trigger }) => {
+  const els = document.querySelectorAll(sel);
+  if (!els.length) return;
+  gsap.from(els, {
+    opacity: 0,
+    y: 60,
+    duration: 0.65,
+    stagger: 0.15,
+    ease: 'power2.out',
+    scrollTrigger: { trigger, start: 'top 85%', once: true },
+  });
+});
 </script>
 </body>
 </html>
