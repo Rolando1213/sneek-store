@@ -117,7 +117,7 @@ nav.scrolled{background:rgba(10,10,11,.95);backdrop-filter:blur(20px);border-bot
 .bs-section{padding:7rem 4rem;background:var(--ink2)}
 .bs-header{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:3rem}
 .bs-track-wrap{position:relative}
-.bs-track{display:flex;gap:1.5rem;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;padding-bottom:.5rem;cursor:grab;user-select:none}
+.bs-track{display:flex;gap:1.5rem;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;padding-bottom:.5rem;padding-left:4rem;width:100vw;margin-left:-4rem;cursor:grab;user-select:none}
 .bs-track::after{content:'';flex-shrink:0;width:4rem}
 .bs-track.is-grabbing{cursor:grabbing}
 .bs-track::-webkit-scrollbar{display:none}
@@ -301,7 +301,8 @@ footer{background:var(--card);border-top:1px solid var(--line);padding:4rem}
   #brand-page,#product-page{padding:6rem 1.5rem 3rem}
   .pp-grid{grid-template-columns:1fr;gap:2rem}
 
-  /* Bestsellers: spacer reducido para móvil */
+  /* Bestsellers: full-width + spacer reducido en móvil */
+  .bs-track{padding-left:1.5rem;margin-left:-1.5rem;width:100vw}
   .bs-track::after{width:1.5rem}
 }
 
@@ -813,6 +814,8 @@ function closeBrand(e){e.preventDefault();showPage('main-site',prevScrollY)}
 let cur={brand:'',model:'',price:0,sz:'',cw:'',q:''};
 function openProduct(brand,model,price,source='brand'){
   prevPage=source;
+  // Guardar posición actual siempre que se venga del main-site (destacados, ticker, etc.)
+  if(source==='main') prevScrollY=window.scrollY;
   cur={brand,model,price,sz:'',cw:'',q:''};
   document.getElementById('pp-brand').textContent=brand;
   document.getElementById('pp-name').textContent=model;
